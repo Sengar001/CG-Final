@@ -1,0 +1,19 @@
+body {
+    margin: 0;
+    overflow: hidden;
+  }
+  
+  canvas {
+    display: block;
+  }
+  
+  #controls {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px;
+    border-radius: 5px;
+    font-family: sans-serif;
+  }

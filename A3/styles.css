@@ -1,0 +1,22 @@
+body { margin: 0; overflow: hidden; }
+canvas { display: block; }
+#info {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-family: Arial, sans-serif;
+    pointer-events: none;
+    text-shadow: 1px 1px 1px black;
+}
+#controls {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: white;
+    font-family: Arial, sans-serif;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 5px;
+}
