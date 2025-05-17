@@ -1,54 +1,22 @@
-import { vertexShader, fragmentShader } from "./shaders.js";
-import { scene, controls, renderer, camera } from "./scene.js";
-import { pointLight1, pointLight2, ambientLight, directionalLight } from "./light.js";
 
-// Base materials (no texture)
-const gouraudMaterial = new THREE.MeshLambertMaterial({ color: 0xffffff, shininess: 30 });
-const phongMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 150, specular: 0x333333 });
+import { scene, controls, renderer, camera, dominos, dominoWidth, dominoHeight, dominoGroup, dominoDepth } from "./scene.js";
+import { pointLight1, pointLight2, ambientLight, directionalLight, updateLights } from "./light.js";
+import { gouraudMaterial, phongMaterial, shininessValues, diffuseReflectances, createShaderMaterial } from "./material.js";
 
-const shininessValues = [10, 30, 60, 90, 120, 150, 180, 210, 240];
-const diffuseReflectances = [
-    0.1, 0.56, 0.67, 0.78, 0.82, 0.45, 0.93, 0.72, 0.88
-];
-
-// Shader Material Creation
-function createShaderMaterial(index) {
-    return new THREE.ShaderMaterial({
-        vertexShader: vertexShader,
-        fragmentShader: fragmentShader,
-        uniforms: {
-            shadingMode: { value: 0 },
-            textureMap: { value: null },
-            useTexture: { value: 0 },
-            lightPositions: { value: [] },
-            lightColors: { value: [] },
-            numLights: { value: 0 },
-            diffuseReflectance: { value: diffuseReflectances[index % diffuseReflectances.length] },
-            ambientColor: { value: new THREE.Color(0.2, 0.2, 0.2) },
-            shininess: { value: shininessValues[index % shininessValues.length] }
-        },
-        glslVersion: THREE.GLSL1
-    });
-}
-
-// In your initialization code, replace material creation:
 const dominoMaterials = [];
 for (let i = 0; i < 9; i++) {
     dominoMaterials.push(createShaderMaterial(i));
 }
 
-
-
 // State variables
-let currentShading = 'phong';   // 'phong' or 'gouraud'
-let currentTexture = null;      // null, checkerTexture, or woodTexture
-let currentMapping = 'box';     // 'box', 'cyl', 'sph'
+let currentShading = 'phong';
+let currentTexture = null;
+let currentMapping = 'box';
 
-// Texture loader
+
 const textureLoader = new THREE.TextureLoader();
 let checkerTexture, woodTexture;
 
-// Create checkerboard texture programmatically
 function createCheckerTexture() {
     const size = 512;
     const canvas = document.createElement('canvas');
@@ -76,19 +44,11 @@ woodTexture = textureLoader.load('https://threejs.org/examples/textures/hardwood
     woodTexture.repeat.set(1, 1);
 });
 
-// Domino geometry setup
-const dominoWidth = 0.5, dominoHeight = 2, dominoDepth = 1;
-const dominos = [], dominoGroup = new THREE.Group();
-scene.add(dominoGroup);
-
 function createDomino(x, z) {
     const geo = new THREE.BoxGeometry(dominoWidth, dominoHeight, dominoDepth);
-    // pick a distinct Phong material by index (0–8):
     const mat = dominoMaterials[dominos.length % dominoMaterials.length].clone();
-    // if we're in Gouraud mode, override with the single Lambert:
     const mesh = new THREE.Mesh(geo, (currentShading === 'phong') ? mat : gouraudMaterial.clone());
     mesh.position.set(x, dominoHeight / 2, z);
-    // mesh.castShadow=true; mesh.receiveShadow=true;
     dominoGroup.add(mesh);
     dominos.push(mesh);
 }
@@ -145,6 +105,7 @@ function applyCylindricalUV(geo) {
     }
     geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
 }
+
 function applySphericalUV(geo) {
     const pos = geo.attributes.position;
     const uv = [];
@@ -158,7 +119,7 @@ function applySphericalUV(geo) {
     geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uv), 2));
 }
 
-// Update your applyAll function:
+// applyAll function:
 function applyAll() {
     dominos.forEach((domino, idx) => {
         const material = domino.material;
@@ -185,35 +146,6 @@ function applyAll() {
     });
 }
 
-
-// Add this to your animation loop:
-function updateLights() {
-    const activeLights = [];
-    if (pointLight1.visible) activeLights.push(pointLight1);
-    if (pointLight2.visible) activeLights.push(pointLight2);
-    if (directionalLight.visible) activeLights.push(directionalLight);
-
-    dominos.forEach(domino => {
-        const uniforms = domino.material.uniforms;
-        const lightPositions = [];
-        const lightColors = [];
-
-        activeLights.forEach(light => {
-            lightPositions.push(light.position.clone());
-            lightColors.push(light.color.clone());
-        });
-
-        // Pad arrays to 3 elements
-        while (lightPositions.length < 3) lightPositions.push(new THREE.Vector3());
-        while (lightColors.length < 3) lightColors.push(new THREE.Color(0, 0, 0));
-
-        uniforms.lightPositions.value = lightPositions;
-        uniforms.lightColors.value = lightColors;
-        uniforms.numLights.value = activeLights.length;
-    });
-}
-
-// Event listeners
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
@@ -222,55 +154,55 @@ window.addEventListener('resize', () => {
 
 document.addEventListener('keydown', (e) => {
     switch (e.key) {
-        case '1': // Gouraud
+        case '1':
             currentShading = 'gouraud';
             applyAll();
             break;
-        case '2': // Phong
+        case '2':
             currentShading = 'phong';
             applyAll();
             break;
-        case '3': // Single light
+        case '3':
             pointLight1.visible = true;
             pointLight2.visible = false;
             directionalLight.visible = false;
             break;
-        case '4': // Multiple lights
+        case '4':
             pointLight1.visible = true;
             pointLight2.visible = true;
             directionalLight.visible = true;
             break;
-        case '5': // Checkerboard
+        case '5':
             currentTexture = checkerTexture;
             currentMapping = 'box';
             applyAll();
             break;
-        case '6': // Wood
+        case '6':
             currentTexture = woodTexture;
             currentMapping = 'box';
             applyAll();
             break;
-        case '7': // No texture
+        case '7':
             currentTexture = null;
             currentMapping = 'box';
             applyAll();
             break;
-        case '8': // Cylindrical mapping toggle
+        case '8':
             if (currentTexture === checkerTexture) {
                 currentMapping = (currentMapping === 'cyl' ? 'box' : 'cyl');
                 applyAll();
             }
             break;
-        case '9': // Spherical mapping toggle
+        case '9':
             if (currentTexture === checkerTexture) {
                 currentMapping = (currentMapping === 'sph' ? 'box' : 'sph');
                 applyAll();
             }
             break;
-        case 's': case 'S': // Shuffle
+        case 's': case 'S':
             shuffleDominos();
             break;
-        case 'a': case 'A': // Toggle arrangement
+        case 'a': case 'A':
             if (currentArrangement === 'uniform') {
                 createNonUniformArrangement();
                 currentArrangement = 'non-uniform';
@@ -282,16 +214,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Ground
-const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(30, 30),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0.2 })
-);
-ground.rotation.x = -Math.PI / 2;
-ground.receiveShadow = true;
-scene.add(ground);
-
-// Modify your animate function:
 (function animate() {
     requestAnimationFrame(animate);
     updateLights();
