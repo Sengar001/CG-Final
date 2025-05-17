@@ -9,6 +9,7 @@ export function startAnimationLoop(state) {
     function animate() {
         requestAnimationFrame(() => animate());
         updatePhysics(state);
+        state.updaters.forEach(fn => fn());
 
         // Update light uniforms
         const activeLights = [];

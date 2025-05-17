@@ -26,4 +26,5 @@ export const state = {
     transitionTargetPosition: new THREE.Vector3(),
     transitionProgress: 0,
     lights: {},
+    updaters: []
 };

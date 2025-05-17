@@ -20,7 +20,7 @@ function init() {
   createDominoUTurn(scene, state.world, state.dominoBodies, state.dominoMeshes, state);
   createSeesaw(scene, state.world, state);
   createPlank(scene, state.world);
-  createPlank1(scene, state.world, state.dominoBodies, state.dominoMeshes);
+  createPlank1(scene, state.world, state.dominoBodies, state.dominoMeshes, state.updaters);
   createPlank2(scene, state.world, state.dominoBodies, state.dominoMeshes);
   state.ball = createBallTrigger(scene, state.world);
   state.followTargets = [state.ball.mesh];

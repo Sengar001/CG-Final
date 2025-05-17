@@ -58,15 +58,16 @@ void main() {
             if(i >= numLights) break;
             
             vec3 lightDir = normalize(lightPositions[i] - vPosition);
-            
+
             // Diffuse
             float diff = max(dot(normal, lightDir), 0.0);
             finalColor += diff * lightColors[i];
             
             // Specular
             vec3 viewDir = normalize(-vPosition);
-            vec3 reflectDir = reflect(-lightDir, normal);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+            vec3 halfwayDir = normalize(lightDir + viewDir);
+            // vec3 reflectDir = reflect(-lightDir, normal);
+            float spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
             finalColor += spec * lightColors[i];
         }
     } else { // Gouraud shading

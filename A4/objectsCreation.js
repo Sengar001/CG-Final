@@ -253,67 +253,67 @@ export function createPlank(scene, world) {
     world.addBody(body);
 }
 
-export function createPlank1(scene, world, dominoBodies, dominoMeshes) {
-    const length = 11.5;
-    const width = 2;
-    const thickness = 0.2;
-    const y = 8;
-    const tilt = 0;
+// export function createPlank1(scene, world, dominoBodies, dominoMeshes) {
+//     const length = 11.5;
+//     const width = 2;
+//     const thickness = 0.2;
+//     const y = 8;
+//     const tilt = 0;
 
-    const geo = new THREE.BoxGeometry(width, thickness, length);
-    const mat = new THREE.MeshStandardMaterial({
-        color: 0x8b4513,
-        roughness: 0.6,
-        metalness: 0.2,
-    });
-    const mesh = new THREE.Mesh(geo, mat);
-    mesh.position.set(15, y, length / 2 + 2);
+//     const geo = new THREE.BoxGeometry(width, thickness, length);
+//     const mat = new THREE.MeshStandardMaterial({
+//         color: 0x8b4513,
+//         roughness: 0.6,
+//         metalness: 0.2,
+//     });
+//     const mesh = new THREE.Mesh(geo, mat);
+//     mesh.position.set(15, y, length / 2 + 2);
 
-    mesh.receiveShadow = true;
-    scene.add(mesh);
+//     mesh.receiveShadow = true;
+//     scene.add(mesh);
 
-    const shape = new CANNON.Box(
-        new CANNON.Vec3(width / 2, thickness / 2, length / 2)
-    );
-    const body = new CANNON.Body({ mass: 0 });
-    body.addShape(shape);
-    body.position.copy(mesh.position);
-    body.quaternion.copy(mesh.quaternion);
-    world.addBody(body);
+//     const shape = new CANNON.Box(
+//         new CANNON.Vec3(width / 2, thickness / 2, length / 2)
+//     );
+//     const body = new CANNON.Body({ mass: 0 });
+//     body.addShape(shape);
+//     body.position.copy(mesh.position);
+//     body.quaternion.copy(mesh.quaternion);
+//     world.addBody(body);
 
-    const dominoHeight = 1.5;
-    const spacing = 0.8;
-    const halfLen = length / 2;
-    const startZ = mesh.position.z + halfLen - spacing;
-    const endZ = mesh.position.z - halfLen + spacing;
-    const n = Math.floor((startZ - endZ) / spacing) + 1;
+//     const dominoHeight = 1.5;
+//     const spacing = 0.8;
+//     const halfLen = length / 2;
+//     const startZ = mesh.position.z + halfLen - spacing;
+//     const endZ = mesh.position.z - halfLen + spacing;
+//     const n = Math.floor((startZ - endZ) / spacing) + 1;
 
-    for (let i = 0; i < n + 1; i++) {
-        const z = startZ - i * spacing;
-        const pos = new THREE.Vector3(15, y + dominoHeight / 2 + thickness / 2, z);
+//     for (let i = 0; i < n + 1; i++) {
+//         const z = startZ - i * spacing;
+//         const pos = new THREE.Vector3(15, y + dominoHeight / 2 + thickness / 2, z);
 
-        const dGeo = new THREE.BoxGeometry(0.6, dominoHeight, 0.1);
-        const dMat = dominoMaterials[i % dominoMaterials.length].clone();
-        const dMesh = new THREE.Mesh(dGeo, dMat);
-        dMesh.position.copy(pos);
-        dMesh.rotation.y = Math.PI;
-        scene.add(dMesh);
-        dominoMeshes.push(dMesh);
+//         const dGeo = new THREE.BoxGeometry(0.6, dominoHeight, 0.1);
+//         const dMat = dominoMaterials[i % dominoMaterials.length].clone();
+//         const dMesh = new THREE.Mesh(dGeo, dMat);
+//         dMesh.position.copy(pos);
+//         dMesh.rotation.y = Math.PI;
+//         scene.add(dMesh);
+//         dominoMeshes.push(dMesh);
 
-        const dShape = new CANNON.Box(new CANNON.Vec3(0.3, dominoHeight / 2, 0.05));
-        const dBody = new CANNON.Body({
-            mass: 15,
-            position: new CANNON.Vec3(pos.x, pos.y, pos.z),
-            shape: dShape,
-            material: new CANNON.Material({ friction: 0.1, restitution: 0.1 }),
-            linearDamping: 0.1,
-            angularDamping: 0.1,
-        });
-        dBody.quaternion.setFromEuler(0, Math.PI, 0);
-        world.addBody(dBody);
-        dominoBodies.push(dBody);
-    }
-}
+//         const dShape = new CANNON.Box(new CANNON.Vec3(0.3, dominoHeight / 2, 0.05));
+//         const dBody = new CANNON.Body({
+//             mass: 15,
+//             position: new CANNON.Vec3(pos.x, pos.y, pos.z),
+//             shape: dShape,
+//             material: new CANNON.Material({ friction: 0.1, restitution: 0.1 }),
+//             linearDamping: 0.1,
+//             angularDamping: 0.1,
+//         });
+//         dBody.quaternion.setFromEuler(0, Math.PI, 0);
+//         world.addBody(dBody);
+//         dominoBodies.push(dBody);
+//     }
+// }
 
 export function createPlank2(scene, world, dominoBodies, dominoMeshes) {
     const length = 10;
@@ -400,4 +400,159 @@ export function createBallTrigger(scene, world) {
 
     // ball = { mesh, body };
     return { mesh, body };
+}
+
+
+let lastDominoBody = null;
+export function createPlank1(scene, world, dominoBodies, dominoMeshes, updaters) {
+    // plank dimensions & placement
+    const length = 11.5, width = 2, thickness = 0.2;
+    const y = 8;
+
+    // Three.js plank
+    const geo = new THREE.BoxGeometry(width, thickness, length);
+    const mat = new THREE.MeshStandardMaterial({
+        color: 0x8B4513,
+        roughness: 0.6,
+        metalness: 0.2
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(15, y, length / 2 + 2);
+    scene.add(mesh);
+
+    // Cannon.js plank
+    const shape = new CANNON.Box(new CANNON.Vec3(width / 2, thickness / 2, length / 2));
+    const body = new CANNON.Body({ mass: 0 });
+    body.addShape(shape);
+    body.position.copy(mesh.position);
+    world.addBody(body);
+
+    // lay out dominos
+    const dominoH = 1.5, spacing = 0.8;
+    const halfLen = length / 2;
+    const startZ = mesh.position.z + halfLen - spacing;
+    const endZ = mesh.position.z - halfLen + spacing;
+    const count = Math.floor((startZ - endZ) / spacing) + 1;
+
+    for (let i = 0; i < count + 1; i++) {
+        const isLast = (i === count);
+        const z = startZ - i * spacing;
+        const pos = new THREE.Vector3(15, y + dominoH / 2 + thickness / 2, z);
+
+        //  Customize last base domino
+        const customBaseDomino = isLast ? {
+            width: 1,
+            height: 1.5,
+            depth: 0.5,
+            mass: 0, // start frozen
+            color: 0x00ffff
+        } : {};
+
+        const dW = customBaseDomino.width || 0.6;
+        const dH = customBaseDomino.height || dominoH;
+        const dD = customBaseDomino.depth || 0.1;
+        const dMass = customBaseDomino.mass ?? 15;
+        const dColor = customBaseDomino.color || dominoMaterials[i % dominoMaterials.length].color;
+
+        const dGeo = new THREE.BoxGeometry(dW, dH, dD);
+        const dMat = new THREE.MeshStandardMaterial({ color: dColor });
+        const dMesh = new THREE.Mesh(dGeo, dMat);
+        dMesh.position.copy(pos);
+        dMesh.rotation.y = Math.PI;
+        scene.add(dMesh);
+        dominoMeshes.push(dMesh);
+
+        const dShape = new CANNON.Box(new CANNON.Vec3(dW / 2, dH / 2, dD / 2));
+        const dBody = new CANNON.Body({
+            mass: dMass,
+            shape: dShape,
+            material: new CANNON.Material({ friction: 0.1, restitution: 0.1 }),
+            linearDamping: 0.1,
+            angularDamping: 0.1,
+            type: dMass === 0 ? CANNON.Body.STATIC : CANNON.Body.DYNAMIC
+        });
+        dBody.position.set(pos.x, pos.y, pos.z);
+        dBody.quaternion.setFromEuler(0, Math.PI, 0);
+        world.addBody(dBody);
+        dominoBodies.push(dBody);
+
+        if (isLast) lastDominoBody = dBody;
+
+        updaters.push(() => {
+            dMesh.position.copy(dBody.position);
+            dMesh.quaternion.copy(dBody.quaternion);
+        });
+    }
+
+    // Create hinged domino on top of last base
+    const last = dominoBodies.length - 1;
+    createHingedDominoPair(scene, world, updaters, {
+        mesh: dominoMeshes[last],
+        body: dominoBodies[last]
+    }, {
+        height: 1.0,
+        width: 0.2,
+        depth: 0.25,
+        mass: 3.0,
+        color: 0xff0000
+    });
+
+    // Unfreeze last domino when second-last moves
+    const secondLast = dominoBodies[dominoBodies.length - 2];
+    updaters.push(() => {
+        const v = secondLast.velocity.length();
+        if (v > 0.2 && lastDominoBody.type === CANNON.Body.STATIC) {
+            lastDominoBody.type = CANNON.Body.DYNAMIC;
+            lastDominoBody.mass = 15;
+            lastDominoBody.updateMassProperties();
+        }
+    });
+}
+
+function createHingedDominoPair(scene, world, updaters, baseDomino, options = {}) {
+    const h = options.height || 1.5;
+    const w = options.width || 0.1;
+    const d = options.depth || 0.2;
+    const color = options.color || 0xff0000;
+    const mass = options.mass || 2;
+
+    const bp = baseDomino.mesh.geometry.parameters;
+    const baseH = bp.height + 0.1;
+
+    const geo = new THREE.BoxGeometry(d, h, w);
+    const mat = new THREE.MeshPhongMaterial({ color, shininess: 32 });
+    const mesh = new THREE.Mesh(geo, mat);
+
+    const topY = baseDomino.body.position.y + baseH / 2 + h / 2;
+    mesh.position.set(baseDomino.body.position.x, topY, baseDomino.body.position.z);
+    mesh.rotation.y = Math.PI / 2;
+    scene.add(mesh);
+
+    const body = new CANNON.Body({
+        mass,
+        position: new CANNON.Vec3(mesh.position.x, mesh.position.y, mesh.position.z),
+        shape: new CANNON.Box(new CANNON.Vec3(d / 2, h / 2, w / 2)),
+        material: new CANNON.Material({ friction: 0.1, restitution: 0.1 }),
+        angularDamping: 0.8 // Strong damping to slow swinging
+    });
+    body.quaternion.setFromEuler(0, mesh.rotation.y, 0);
+    world.addBody(body);
+
+    const pivotA = new CANNON.Vec3(0, baseH / 2, 0);
+    const pivotB = new CANNON.Vec3(0, -h / 2, 0);
+    const axis = new CANNON.Vec3(1, 0, 0);
+
+    const hinge = new CANNON.HingeConstraint(baseDomino.body, body, {
+        pivotA, axisA: axis,
+        pivotB, axisB: axis,
+        collideConnected: false,
+        maxForce: 1e4
+    });
+
+    world.addConstraint(hinge);
+
+    updaters.push(() => {
+        mesh.position.copy(body.position);
+        mesh.quaternion.copy(body.quaternion);
+    });
 }
